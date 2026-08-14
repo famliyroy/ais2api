@@ -1,0 +1,45 @@
+# docker-compose.yml - ais2api 部署配置
+version: "3.8"
+
+services:
+  ais2api:
+    # 使用多架构镜像，自动适配 amd64/arm64
+    # 镜像地址请根据你的 Docker Hub 用户名修改
+    image: famliyroy/ais2api:latest
+    # 如果需要本地构建，取消下面两行注释
+    # build:
+    #   context: .
+    container_name: ais2api
+    restart: unless-stopped
+    ports:
+      - "7860:7860"  # API 服务端口
+      - "9998:9998"  # WebSocket 端口
+    environment:
+      # 浏览器可执行文件路径 (容器内已配置好)
+      - CAMOUFOX_EXECUTABLE_PATH=/app/camoufox-linux/camoufox
+      # 初始认证索引 (默认 1)
+      - INITIAL_AUTH_INDEX=1
+      # ====== 认证配置 (二选一) ======
+      # 方式1: 环境变量认证 (推荐，适合容器部署)
+      # - AUTH_JSON_1={"cookies":[...],"origins":[...]}  # 填入你的 Google AI Studio 认证 JSON
+      # 方式2: 文件认证 (挂载 auth 目录)
+      # ====== 可选配置 ======
+      - NODE_ENV=production
+    # 如果使用文件认证，取消下面注释并放入 auth-1.json 文件
+    # volumes:
+    #   - ./auth:/app/auth:ro
+    #   - ./single-line-auth:/app/single-line-auth:ro
+    # 资源限制 (Camoufox 浏览器较占内存)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    # ARM 服务器无需额外配置，镜像会自动选择 arm64 版本的 Camoufox
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

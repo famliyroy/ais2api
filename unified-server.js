@@ -202,11 +202,19 @@ class BrowserManager {
     } else {
       const platform = os.platform();
       if (platform === "linux") {
-        this.browserExecutablePath = path.join(
-          __dirname,
-          "camoufox-linux",
-          "camoufox",
-        );
+        // 支持 camoufox 和 camoufox-bin 两种命名 (兼容 x86_64 和 arm64)
+        const camoufoxDir = path.join(__dirname, "camoufox-linux");
+        const camoufoxBin = path.join(camoufoxDir, "camoufox");
+        const camoufoxAltBin = path.join(camoufoxDir, "camoufox-bin");
+        if (fs.existsSync(camoufoxBin)) {
+          this.browserExecutablePath = camoufoxBin;
+        } else if (fs.existsSync(camoufoxAltBin)) {
+          this.browserExecutablePath = camoufoxAltBin;
+        } else {
+          throw new Error(
+            `Browser executable not found in ${camoufoxDir}. Expected 'camoufox' or 'camoufox-bin'.`,
+          );
+        }
       } else {
         throw new Error(`Unsupported operating system: ${platform}`);
       }
